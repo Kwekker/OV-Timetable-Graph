@@ -9,6 +9,9 @@
 #include <vector>
 #include <set>
 
+// Compile with:
+// g++ convertSchedule.cpp -Wall -o convert
+
 typedef uint32_t secondsTime_t;
 
 struct TripInfo {
@@ -29,7 +32,7 @@ secondsTime_t timeToSeconds(std::string in);
 int main(int argc, const char** argv) {
 
     if(argc < 3) {
-        printf("Usage: ./convert <path to stop_times.txt> <output file>");
+        std::cout << "Usage: ./convert <path to stop_times.txt> <output file>" << std::endl;
         return -1;
     }
 
@@ -78,17 +81,17 @@ int main(int argc, const char** argv) {
 
     // Start generating the file.
     // File is:
-    //   4 bytes of index length in bytes
+    //   8 bytes of index length in bytes
     //   1 byte of maximum stop ID length
     //   1 byte of maximum trip ID length
     //   Index (array):
     //      stopID: MAX_STOP_ID_LENGTH bytes
     //      filePtr: value for fseek to go to in the file to find the trip array for this stop
 
-    const size_t stopEntryLength = maxStopIDLength + sizeof(size_t);
-    const size_t indexLength = stops.size() * stopEntryLength;
-    const size_t headerLength = sizeof(maxStopIDLength) + sizeof(maxTripIDLength);
-    const size_t tripEntryLength = maxTripIDLength + 2 * sizeof(secondsTime_t);
+    const uint64_t stopEntryLength = maxStopIDLength + sizeof(uint64_t);
+    const uint64_t indexLength = stops.size() * stopEntryLength;
+    const uint64_t headerLength = sizeof(indexLength) + sizeof(maxStopIDLength) + sizeof(maxTripIDLength);
+    const uint64_t tripEntryLength = maxTripIDLength + 2 * sizeof(secondsTime_t);
 
     outStream.write((char*) (&indexLength), sizeof(indexLength));
     outStream.write((char*) (&maxStopIDLength), sizeof(maxStopIDLength));
@@ -97,18 +100,20 @@ int main(int argc, const char** argv) {
     std::cerr << "index, maxStopID and maxTripID length: "
         << indexLength << ", " << (int)maxStopIDLength << ", " << (int)maxTripIDLength << std::endl;
 
-    size_t fileIndex = indexLength + headerLength;
+    // Make the index
+    uint64_t tripEntryFileIndex = indexLength + headerLength;
     for (auto iter = stops.begin(); iter != stops.end(); iter++) {
         // The stopID string needs to be a constant length for the whole binary search thing to work.
         char stopIDChar[maxStopIDLength] = {0};
         stringPad(stopIDChar, iter->first, maxStopIDLength);
 
         outStream.write(stopIDChar, maxStopIDLength);
-        outStream.write((char*)(&fileIndex), sizeof(fileIndex));
+        outStream.write((char*)(&tripEntryFileIndex), sizeof(tripEntryFileIndex));
 
-        fileIndex += iter->second.size() * tripEntryLength;
+        tripEntryFileIndex += iter->second.size() * tripEntryLength;
     }
 
+    // Make the contents
     for (auto stopIter = stops.begin(); stopIter != stops.end(); stopIter++) {
 
         for (auto tripIter = stopIter->second.begin(); tripIter != stopIter->second.end(); tripIter++) {
