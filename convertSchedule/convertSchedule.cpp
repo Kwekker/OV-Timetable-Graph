@@ -15,14 +15,14 @@
 typedef uint32_t secondsTime_t;
 
 struct TripInfo {
-    std::string tripID;
-    uint32_t arrival;
     uint32_t departure;
-
+    uint32_t arrival;
+    std::string tripID;
 };
 
 bool operator<(const TripInfo first, const TripInfo second) {
-    return first.tripID < second.tripID;
+    // Make sure to sort the trips by departure.
+    return first.departure < second.departure;
 }
 
 void stringPad(char *dest, std::string from, uint8_t length);
@@ -53,31 +53,23 @@ int main(int argc, const char** argv) {
         std::istringstream stringStream(line);
         for (uint8_t i = 0; i < 6; i++) {
             getline(stringStream, columns[i], ',');
-            // std::cout << "\tCol " << i << " is " << columns[i] << std::endl;
         }
         
         stops[columns[2]].insert(
-            {columns[0], timeToSeconds(columns[4]), timeToSeconds(columns[5])}
+            // Departure, arrival, trip ID.
+            {timeToSeconds(columns[5]), timeToSeconds(columns[4]), columns[0], }
         );
 
         if(columns[2].length() > maxStopIDLength) maxStopIDLength = columns[2].length();
         if(columns[0].length() > maxTripIDLength) maxTripIDLength = columns[0].length();
-
-        // TripInfo printStop = stops[columns[2]].back();
-        // std::cout << "^^ " << printStop.tripID << ", " << printStop.arrival << ", " << printStop.departure << " ^^" << std:: endl;
         
     }
     stopTimes.close();
 
-    // std::cerr << "Printing them.." << std::endl;
 
-    // for(auto iter = stops.begin(); iter != stops.end(); iter++) {
-    //     std::cout << iter->first << std::endl;
-    //     for (auto i : iter->second) {
-    //         std::cout << "\t" << i.tripID << ", " << i.arrival << ", " << i.departure << std::endl;
-    //     }
-    // }
-
+    // Create a dummy stop that is placed at the end of all other stops (I hope)
+    std::string dummyStopID(maxStopIDLength, 'z');
+    stops[std::string(maxStopIDLength, 'z')].insert({0, 0, "kwek"});
 
     // Start generating the file.
     // File is:
@@ -101,16 +93,16 @@ int main(int argc, const char** argv) {
         << indexLength << ", " << (int)maxStopIDLength << ", " << (int)maxTripIDLength << std::endl;
 
     // Make the index
-    uint64_t tripEntryFileIndex = indexLength + headerLength;
+    uint64_t tripEntryFilePos = indexLength + headerLength;
     for (auto iter = stops.begin(); iter != stops.end(); iter++) {
         // The stopID string needs to be a constant length for the whole binary search thing to work.
         char stopIDChar[maxStopIDLength] = {0};
         stringPad(stopIDChar, iter->first, maxStopIDLength);
 
         outStream.write(stopIDChar, maxStopIDLength);
-        outStream.write((char*)(&tripEntryFileIndex), sizeof(tripEntryFileIndex));
+        outStream.write((char*)(&tripEntryFilePos), sizeof(tripEntryFilePos));
 
-        tripEntryFileIndex += iter->second.size() * tripEntryLength;
+        tripEntryFilePos += iter->second.size() * tripEntryLength;
     }
 
     // Make the contents
@@ -122,9 +114,9 @@ int main(int argc, const char** argv) {
             char tripIDChar[maxTripIDLength] = {0};
             stringPad(tripIDChar, tripIter->tripID, maxTripIDLength);
 
-            outStream.write(tripIDChar, maxTripIDLength);
-            outStream.write((char*)(&tripIter->arrival), sizeof(secondsTime_t));
             outStream.write((char*)(&tripIter->departure), sizeof(secondsTime_t));
+            outStream.write((char*)(&tripIter->arrival), sizeof(secondsTime_t));
+            outStream.write(tripIDChar, maxTripIDLength);
         }
     }
 
