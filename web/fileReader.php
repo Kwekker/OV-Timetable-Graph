@@ -1,10 +1,15 @@
 <?php
+$printNowSeconds = time() - strtotime("today");
+echo "Hi ja hi de huidige tijd is $printNowSeconds\n";  
+$tripsPerStop = get_trips("stop_trips.dat", ["2512376","2512377"], 3600);
+foreach ($tripsPerStop as $trips) {
+    foreach ($trips as $trip) {
+        $trip->arrival = secondsToTimeString($trip->arrival);
+        $trip->departure = secondsToTimeString($trip->departure);
+    }
+}
+var_dump($tripsPerStop);
 
-$trips = get_trips("stop_trips.dat", ["2512376","2512377"], 600);
-var_dump($trips);
-
-//! For some reason it's grabbing like the whole day?? Like it grabbed something from 9 am while it's 11 pm.
-//! Weird thing was that it started from 9:33, even though it should start from 23:33. Very strange.
 
 // Gets trip IDs and arrival/departure times from a stop_trips.dat file.
 // $file is the stop_trips.dat file
@@ -27,30 +32,27 @@ function get_trips($fileName, $stopIDs, $interval) {
         fseek($file, $indexEntrySize, SEEK_CUR);
         $nextPos = fread($file, 8);
 
-        array_push($filePositions, ["from" => unpack("P", $pos)[1], "to" => unpack("P", $nextPos)[1]]);
+        $filePositions[$stopID] = ["from" => unpack("P", $pos)[1], "to" => unpack("P", $nextPos)[1]];
         // Go back to the start of the file for the next iteration
         fseek($file, 10);
     }
 
     $nowSeconds = time() - strtotime("today");
     $trips = [];
-
-    echo "found: ";
-    var_dump($filePositions);
     
-    for ($i = 0; $i < count($stopIDs); $i++) {
-        $pos = $filePositions[$i];
+    foreach ($stopIDs as $stopID) {
+        $pos = $filePositions[$stopID];
         fseek($file, $pos["from"]);
         $tripEntries = ($pos["to"] - $pos["from"] + 1) / $tripEntrySize;
-        bin_search($file, $nowSeconds, 4, $tripEntrySize, $tripEntries);
+        bin_search($file, $nowSeconds, 4, $tripEntrySize, $tripEntries, false, "V");
         fseek($file, -4, SEEK_CUR);
         
-        $trips[$stopIDs[$i]] = [];
+        $trips[$stopID] = [];
         
         do {
             $tripEntry = unpack("V1departure/V1arrival", fread($file, 8));
             $tripEntry["tripID"] = fread($file, $sizes["tripID"]);
-            array_push($trips[$stopIDs[$i]], (object)$tripEntry);
+            array_push($trips[$stopID], (object)$tripEntry);
         } 
         while ($tripEntry["departure"] < $nowSeconds + $interval);
     }
@@ -72,7 +74,7 @@ function get_trips($fileName, $stopIDs, $interval) {
 // Returns false if $needle wasn't found and $exact is set to true.
 // File pointer will end up on the first byte of the returned data.
 // If $needle wasn't found file pointer will end up on the data of the entry greater than $needle.
-function bin_search($file, $needle, $needleSize, $entrySize, $entries, $exact = true) {
+function bin_search($file, $needle, $needleSize, $entrySize, $entries, $exact = true, $pattern = null) {
     $low = 0;
     $high = $entries;
     $current = 0;
@@ -95,8 +97,11 @@ function bin_search($file, $needle, $needleSize, $entrySize, $entries, $exact = 
             fseek($file, -($entrySize - $needleSize), SEEK_CUR);
             return $ret;
         }
-
-        if($needle < $thisNeedle) {
+        
+        if(
+            $pattern == null && $needle < $thisNeedle
+            || $pattern != null && $needle < unpack($pattern, $thisNeedle)[1]
+        ) {
             $high = $mid - 1;
         }
         else {
@@ -116,6 +121,11 @@ function bin_search($file, $needle, $needleSize, $entrySize, $entries, $exact = 
     }
 
     return false;
+}
+
+
+function secondsToTimeString($seconds) {
+    return sprintf("%d:%02d:%02d", floor($seconds/(60*60)), floor($seconds/60) % 60, $seconds % 60);
 }
 
 ?>
