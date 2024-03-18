@@ -9,3 +9,7 @@
 # Ignore text files, which is the file format gtfs uses for its static schedules.
 # We don't want any gtfs files in the git because one: they are massive and two: you should download a relevant version from OVapi.
 *.txt
+
+# You can download these from OVapi.
+*.pb
+*.proto
