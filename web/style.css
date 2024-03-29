@@ -1,0 +1,77 @@
+:root {
+    
+    --station-height: 50px;
+
+}
+
+
+body {
+    padding: 0;
+    margin: 0;
+    border: 0;
+
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+header {
+    /* position: fixed; */
+    background-color: #ddd;
+    margin: 0;
+    text-align: center;
+    height: 25px;
+    font-size: 25px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+
+#timetable {
+    position: fixed;
+    background-color: #222;
+    display: block;
+    min-height: calc(100vh - 25px);
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    overflow: scroll;
+}
+
+#names {
+    height: 100%;
+    width: fit-content;
+    position: fixed;
+    left: 10px;
+}
+
+#names div {
+    color: #ccc;
+
+    height: var(--station-height);
+    position: relative;
+    top: calc(var(--station-height) - 1em - 3px);
+    font-size: 20px;
+}
+
+#scroller {
+    height: 100%;
+    position: relative;
+}
+
+#stations {
+    height: 100%;
+    width: 100%;
+}
+
+#stations div {
+    height: var(--station-height);
+    border-bottom: #333 solid 2px;
+    box-sizing: border-box;
+}
+
+.line {
+    width: 0;
+    border-right: 4px solid magenta;
+
+    position: absolute;
+}
