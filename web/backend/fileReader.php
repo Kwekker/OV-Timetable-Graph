@@ -1,7 +1,7 @@
 <?php
 $printNowSeconds = time() - strtotime("today");
 echo "Hi ja hi de huidige tijd is $printNowSeconds\n";  
-$tripsPerStop = get_trips("stop_trips.dat", ["2512376","2512377"], 3600);
+$tripsPerStop = get_trips("stop_trips.dat", ["2512376","2512377","2512375"], 3600);
 foreach ($tripsPerStop as $trips) {
     foreach ($trips as $trip) {
         $trip->arrival = secondsToTimeString($trip->arrival);
