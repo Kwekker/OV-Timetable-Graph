@@ -13,3 +13,6 @@
 # You can download these from OVapi.
 *.pb
 *.proto
+
+*.log
+*.pyc

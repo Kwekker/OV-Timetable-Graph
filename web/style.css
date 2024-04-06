@@ -39,17 +39,20 @@ header {
 
 #names {
     height: 100%;
-    width: fit-content;
+    width: 100%;
     position: fixed;
-    left: 10px;
 }
 
-#names div {
-    color: #ccc;
-
+#names>div {
+    box-sizing: border-box;
+    
     height: var(--station-height);
-    position: relative;
+
+    color: #ccc;
+    padding-left: 10px;
+
     top: calc(var(--station-height) - 1em - 3px);
+    position: relative;
     font-size: 20px;
 }
 
@@ -61,12 +64,17 @@ header {
 #stations {
     height: 100%;
     width: 100%;
+    display: block;
+    position:absolute;
 }
 
 #stations div {
-    height: var(--station-height);
     border-bottom: #333 solid 2px;
-    box-sizing: border-box;
+    height: var(--station-height);
+}
+
+#lines {
+    position: relative;
 }
 
 .line {

@@ -12,6 +12,7 @@
 // Compile with:
 // g++ convertSchedule.cpp -Wall -o convert
 
+
 typedef uint32_t secondsTime_t;
 
 struct TripInfo {
